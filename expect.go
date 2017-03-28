@@ -30,7 +30,7 @@ type Expect interface {
 	NotDeepEqual(name string, actual interface{}, expected interface{})
 	Equal(name string, actual interface{}, expected interface{})
 	NotEqual(name string, actual interface{}, expected interface{})
-	SliceEqual(name string, actual []interface{}, expected ...interface{})
+	SliceEqual(name string, actual interface{}, expected interface{})
 }
 
 // context describes a testing context
@@ -93,15 +93,33 @@ func (c *context) NotEqual(name string, actual interface{}, notExpected interfac
 }
 
 // SliceEqual asserts that the two given slices have the same values at the same indices.
-func (c *context) SliceEqual(name string, actual []interface{}, expected ...interface{}) {
-	if len(actual) != len(expected) {
-		c.fail(1, "expected len(%s) to be %d, got %d", name, len(expected), len(actual))
+func (c *context) SliceEqual(name string, actual interface{}, expected interface{}) {
+	aslice := interfaceSlice(actual)
+	eslice := interfaceSlice(expected)
+
+	if len(aslice) != len(eslice) {
+		c.fail(1, "expected len(%s) to be %d, got %d", name, len(eslice), len(aslice))
 	}
-	for i, v := range actual {
-		if !equal(v, expected[i]) {
-			c.fail(1, "expected %s[%d] to equal %v, got %v", name, i, expected, actual)
+	for i, v := range aslice {
+		if !equal(v, eslice[i]) {
+			c.fail(1, "expected %s[%d] to equal %v, got %v", name, i, eslice, v)
 		}
 	}
+}
+
+func interfaceSlice(slice interface{}) []interface{} {
+	s := reflect.ValueOf(slice)
+	if s.Kind() != reflect.Slice {
+		panic("InterfaceSlice() given a non-slice type")
+	}
+
+	ret := make([]interface{}, s.Len())
+
+	for i := 0; i < s.Len(); i++ {
+		ret[i] = s.Index(i).Interface()
+	}
+
+	return ret
 }
 
 // fail fails the test
