@@ -30,6 +30,7 @@ type Expect interface {
 	NotDeepEqual(name string, actual interface{}, expected interface{})
 	Equal(name string, actual interface{}, expected interface{})
 	NotEqual(name string, actual interface{}, expected interface{})
+	SliceEqual(name string, actual []interface{}, expected ...interface{})
 }
 
 // context describes a testing context
@@ -88,6 +89,18 @@ func (c *context) Equal(name string, actual interface{}, expected interface{}) {
 func (c *context) NotEqual(name string, actual interface{}, notExpected interface{}) {
 	if equal(actual, notExpected) {
 		c.fail(1, "expected %s to not equal %v", name, notExpected)
+	}
+}
+
+// SliceEqual asserts that the two given slices have the same values at the same indices.
+func (c *context) SliceEqual(name string, actual []interface{}, expected ...interface{}) {
+	if len(actual) != len(expected) {
+		c.fail(1, "expected len(%s) to be %d, got %d", name, len(expected), len(actual))
+	}
+	for i, v := range actual {
+		if !equal(v, expected[i]) {
+			c.fail(1, "expected %s[%d] to equal %v, got %v", name, i, expected, actual)
+		}
 	}
 }
 
